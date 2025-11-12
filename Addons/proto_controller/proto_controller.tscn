@@ -1,0 +1,66 @@
+[gd_scene load_steps=5 format=3 uid="uid://bs72ogkvdd7d6"]
+
+[ext_resource type="Script" uid="uid://0viwh103d8tp" path="res://addons/proto_controller/proto_controller.gd" id="1_ucva2"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iof21"]
+albedo_color = Color(0.91806, 0.575202, 0.222449, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_ucva2"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_iof21"]
+radius = 0.4
+height = 1.8
+
+[node name="ProtoController" type="CharacterBody3D"]
+script = ExtResource("1_ucva2")
+can_air_jump = false
+max_air_jumps = 3
+base_speed = 10.0
+jump_velocity = 6.5
+deceleration = 0.52
+acceleration = 0.025
+input_left = "move_left"
+input_right = "move_right"
+input_forward = "move_up"
+input_back = "move_down"
+input_jump = "jump"
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+visible = false
+material_override = SubResource("StandardMaterial3D_iof21")
+cast_shadow = 0
+mesh = SubResource("CapsuleMesh_ucva2")
+
+[node name="Collider" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_iof21")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head"]
+
+[node name="RaycastGroup" type="Node3D" parent="."]
+
+[node name="RayCast_mid" type="RayCast3D" parent="RaycastGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.018535137, 0, 0)
+target_position = Vector3(0, -0.1, 0)
+
+[node name="RayCast_edge1" type="RayCast3D" parent="RaycastGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.43817952)
+target_position = Vector3(0, -0.1, 0)
+
+[node name="RayCast_edge2" type="RayCast3D" parent="RaycastGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45260575, 0, 0)
+target_position = Vector3(0, -0.1, 0)
+
+[node name="RayCast_edge3" type="RayCast3D" parent="RaycastGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.43370527)
+target_position = Vector3(0, -0.1, 0)
+
+[node name="RayCast_edge4" type="RayCast3D" parent="RaycastGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.44112745, 0, 0)
+target_position = Vector3(0, -0.1, 0)
