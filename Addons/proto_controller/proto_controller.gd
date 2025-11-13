@@ -7,7 +7,7 @@ extends CharacterBody3D
 @export_group("Abilities")
 ## Can we move around?
 @export var can_move : bool = true
-var move_speed : float = 0.0
+var move_speed : float = 0.0 #m/s
 ## Are we affected by gravity?
 @export var has_gravity : bool = true
 ## Can we press to jump?
@@ -17,8 +17,18 @@ var move_speed : float = 0.0
 ## How many air jumps?
 @export var max_air_jumps : int = 1
 var air_jump_counter = max_air_jumps
-## Can we hold to run?
-@export var can_sprint : bool = false
+## Can we super jump?
+@export var can_super_jump : bool = true
+## how long to crouch for
+@export var super_jump_charge : float = 1.0 #s
+## Can we press to Crouch?
+@export var can_crouch : bool = true
+var isCrouching: bool = false
+## Can the player slide?
+@export var can_slide : bool = true
+var isSliding: bool = false
+## How fast to go to slide
+@export var slide_trigger : float = 10.0 #m/s
 ## Can we press to enter freefly mode (noclip)?
 @export var can_freefly : bool = false
 var freeflying : bool = false
@@ -27,11 +37,14 @@ var freeflying : bool = false
 ## Look around rotation speed.
 @export var look_speed : float = 0.002
 ## Normal speed.
-@export var base_speed : float = 7.0
+@export var run_speed : float = 7.0
+## crouch speed.
+@export var crouch_speed : float = 4.5
+## slide speed.
+@export var slide_speed : float = 10.0
 ## Speed of jump.
 @export var jump_velocity : float = 4.5
-## How fast do we run?
-@export var sprint_speed : float = 10.0
+@export var super_jump_mult : float = 2.0
 ## How fast do we freefly?
 @export var freefly_speed : float = 25.0
 ## How fast do we stop
@@ -48,10 +61,10 @@ var freeflying : bool = false
 @export var input_forward : String = "ui_up"
 ## Name of Input Action to move Backward.
 @export var input_back : String = "ui_down"
+## Name of Input Action to crouch.
+@export var input_crouch : String = "crouch"
 ## Name of Input Action to Jump.
 @export var input_jump : String = "ui_accept"
-## Name of Input Action to Sprint.
-@export var input_sprint : String = "sprint"
 ## Name of Input Action to toggle freefly mode.
 @export var input_freefly : String = "freefly"
 
@@ -60,10 +73,12 @@ var freeflying : bool = false
 @export var deceleration_buffer : float = 0.1
 @export var jump_buffer : float = 0.1
 @export var jump_buffer_distance : float = 0.1
+var base_speed : float = run_speed
 var delayed_jump := false 
 var timers := {
 	"move": 0.0,
 	"jump":0.0,
+	"superJump":0.0,
 	"air":0.0,
 	"debug_timer":0.0
 	# Add more actions here in the future
@@ -73,7 +88,7 @@ var mouse_captured : bool = false
 var look_rotation : Vector2
 ## IMPORTANT REFERENCES
 @onready var head: Node3D = $Head
-@onready var collider: CollisionShape3D = $Collider
+@onready var collider: CollisionShape3D = $StandingCollider
 @onready var rays = $RaycastGroup.get_children()
 
 func _ready() -> void:
@@ -102,10 +117,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	#Debug message every second
 	if timers["debug_timer"] >= 1.0:
-		print(timers["air"])
+		print(move_speed)
 		timers["debug_timer"] = 0.0
 
-	# time sinc last input used for grace periods and cooldowns
+	# time sinc used for grace periods and cooldowns
 	for action_name in timers.keys():
 		timers[action_name] += delta
 
@@ -128,7 +143,7 @@ func _physics_process(delta: float) -> void:
 			#turne of rays for grace jumps
 			for ray in rays:
 				ray.enabled = true
-				ray.cast_to.y = -ray_length
+				ray.target_position = Vector3(0, -ray_length, 0)
 
 	# reset air jumps when on floor
 	if is_on_floor():
@@ -139,6 +154,7 @@ func _physics_process(delta: float) -> void:
 		if delayed_jump:
 			velocity.y = jump_velocity
 			timers["jump"] = 0.0
+			uncrouchToJump()
 			delayed_jump = false
 		# Disable landing detection rays (no need when grounded)
 		for ray in rays:
@@ -149,8 +165,14 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed(input_jump):
 			#am i on the ground
 			if  is_on_floor() or timers["air"] <= jump_buffer:
-				velocity.y = jump_velocity
+				if can_super_jump == true and timers["superJump"] >= super_jump_charge:
+					velocity.y = jump_velocity * super_jump_mult
+				else:
+					velocity.y = jump_velocity
 				timers["jump"] = 0.0
+				print("jump")
+				uncrouchToJump()
+				
 			elif timers["jump"] >= jump_buffer:
 				#am i abbout to land
 				for ray in rays:
@@ -158,41 +180,106 @@ func _physics_process(delta: float) -> void:
 						delayed_jump = true
 						break
 					#use an air jump
-					elif can_air_jump and air_jump_counter > 0:
-						velocity.y = jump_velocity
-						timers["jump"] = 0.0
-						air_jump_counter = air_jump_counter-1
-
+				if can_air_jump and air_jump_counter > 0 and delayed_jump == false:
+					velocity.y = jump_velocity
+					timers["jump"] = 0.0
+					uncrouchToJump()
+					air_jump_counter = air_jump_counter-1
+		if not is_on_floor() or not(isCrouching != isSliding):
+			timers["superJump"] = 0.0
 	# Modify speed 
-	#no sprinting in this game
-	#if can_sprint and Input.is_action_pressed(input_sprint):
-			#move_speed = move_speed + sprint_speed
-	#else:
-		#move_speed = move_speed + base_speed
-		
-	# Apply desired movement to velocity
-	
+	if can_crouch:
+		if Input.is_action_just_pressed("crouch"):
+			#stand up
+			if isCrouching == true or isSliding == true:
+				movementStateChange("uncrouch")
+			#slide or crouch
+			else:
+				movementStateChange("crouch")
+		#state change dipending on speed
+		if isCrouching == true and Vector2(velocity.x, velocity.z).length() >= slide_trigger:
+			movementStateChange("crouchToSlide")
+		elif isSliding and Vector2(velocity.x, velocity.z).length() <= slide_trigger:
+			movementStateChange("slideToCrouch")
+
+	#Move player
 	if can_move:
 		var input_dir := Input.get_vector(input_left, input_right, input_forward, input_back)
 		var move_dir := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-		if move_dir:
-			# Accelerate toward full speed
-			move_speed = lerp(move_speed, base_speed, 1.0 - pow(1.0 - acceleration, delta * 60.0))
-			velocity.x = move_dir.x * move_speed
-			velocity.z = move_dir.z * move_speed
-			timers["move"] = 0.0
-		elif timers["move"] > deceleration_buffer:
-			# Decelerate smoothly when not moving
-			move_speed = lerp(move_speed, 0.0, 1.0 - pow(1.0 - deceleration, delta * 60.0))
-			velocity.x = move_toward(velocity.x, 0, 1.0 - pow(1.0 - deceleration, delta * 60.0)) 
-			velocity.z = move_toward(velocity.z, 0, 1.0 - pow(1.0 - deceleration, delta * 60.0))
+		if is_on_floor():
+			if move_dir:
+				# Accelerate toward full speed
+				move_speed = lerp(move_speed, base_speed, 1.0 - pow(1.0 - acceleration, delta * 60.0))
+				velocity.x = move_dir.x * move_speed
+				velocity.z = move_dir.z * move_speed
+				timers["move"] = 0.0
+			elif timers["move"] > deceleration_buffer:
+				# Decelerate smoothly when not moving
+				move_speed = lerp(move_speed, 0.0, 1.0 - pow(1.0 - deceleration, delta * 60.0))
+				velocity.x = move_toward(velocity.x, 0, 1.0 - pow(1.0 - deceleration, delta * 60.0)) 
+				velocity.z = move_toward(velocity.z, 0, 1.0 - pow(1.0 - deceleration, delta * 60.0))
+		else:
+			if move_dir:
+				velocity.x = move_dir.x * move_speed
+				velocity.z = move_dir.z * move_speed 
+			else:
+				velocity.x = velocity.x
+				velocity.z = velocity.z
 	else:
 		velocity.x = 0
 		velocity.y = 0
-	
+
 	# Use velocity to actually move
 	move_and_slide()
 
+func uncrouchToJump():
+	if isCrouching==true or isSliding == true:
+		movementStateChange("uncrouch")
+	else:
+		pass
+
+func movementStateChange(changeType):
+	match changeType:
+		"uncrouch":
+			$AnimationPlayer.play_backwards("StandingToCrouch")
+			isCrouching = false
+			isSliding = false
+			changeCollisionShapeTo("standing")
+			base_speed = run_speed
+		"slide":
+			$AnimationPlayer.play("StandingToCrouch")
+			isCrouching = false
+			isSliding = true
+			#crouching and sliding Collision Shapes are the same 
+			changeCollisionShapeTo("crouching")
+			base_speed = slide_speed
+		"crouch":
+			$AnimationPlayer.play("StandingToCrouch")
+			isCrouching = true
+			isSliding = false
+			changeCollisionShapeTo("crouching")
+			base_speed = crouch_speed
+		"crouchToSlide":
+			isCrouching = false
+			isSliding = true
+			base_speed = slide_speed
+		"slideToCrouch":
+			isCrouching = true
+			isSliding = false
+			base_speed = crouch_speed
+
+
+#Change collision shapes for standing, crouch, crawl
+func changeCollisionShapeTo(shape):
+	match shape:
+		"crouching":
+			#Disabled == false is enabled!
+			$CrouchCollider.disabled = false
+			$StandingCollider.disabled = true
+		"standing":
+			#Disabled == false is enabled!
+			$StandingCollider.disabled = false
+			$CrouchCollider.disabled = true
 
 ## Rotate us to look around.
 ## Base of controller rotates around y (left/right). Head rotates around x (up/down).
@@ -242,12 +329,12 @@ func check_input_mappings():
 	if can_move and not InputMap.has_action(input_back):
 		push_error("Movement disabled. No InputAction found for input_back: " + input_back)
 		can_move = false
+	if can_crouch and not InputMap.has_action(input_crouch):
+		push_error("Movement disabled. No InputAction found for input_back: " + input_back)
+		can_crouch = false
 	if can_jump and not InputMap.has_action(input_jump):
 		push_error("Jumping disabled. No InputAction found for input_jump: " + input_jump)
 		can_jump = false
-	if can_sprint and not InputMap.has_action(input_sprint):
-		push_error("Sprinting disabled. No InputAction found for input_sprint: " + input_sprint)
-		can_sprint = false
 	if can_freefly and not InputMap.has_action(input_freefly):
 		push_error("Freefly disabled. No InputAction found for input_freefly: " + input_freefly)
 		can_freefly = false

@@ -1,6 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://bs72ogkvdd7d6"]
+[gd_scene load_steps=10 format=3 uid="uid://bs72ogkvdd7d6"]
 
-[ext_resource type="Script" uid="uid://0viwh103d8tp" path="res://addons/proto_controller/proto_controller.gd" id="1_ucva2"]
+[ext_resource type="Script" uid="uid://0viwh103d8tp" path="res://Addons/proto_controller/proto_controller.gd" id="1_ucva2"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iof21"]
 albedo_color = Color(0.91806, 0.575202, 0.222449, 1)
@@ -13,12 +13,69 @@ height = 1.8
 radius = 0.4
 height = 1.8
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_njsuj"]
+radius = 0.4
+height = 1.0
+
+[sub_resource type="Animation" id="Animation_njsuj"]
+resource_name = "StandingToCrouch"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Head:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, 1.7, 0), Vector3(0, 0.9, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_mpk8l"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Head:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 1.7, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_62upf"]
+resource_name = "Reset"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Head:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 1.7, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_62upf"]
+_data = {
+&"RESET": SubResource("Animation_mpk8l"),
+&"Reset": SubResource("Animation_62upf"),
+&"StandingToCrouch": SubResource("Animation_njsuj")
+}
+
 [node name="ProtoController" type="CharacterBody3D"]
 script = ExtResource("1_ucva2")
-can_air_jump = false
 max_air_jumps = 3
-base_speed = 10.0
 jump_velocity = 6.5
+super_jump_mult = 1.5
 deceleration = 0.52
 acceleration = 0.025
 input_left = "move_left"
@@ -29,14 +86,17 @@ input_jump = "jump"
 
 [node name="Mesh" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-visible = false
 material_override = SubResource("StandardMaterial3D_iof21")
 cast_shadow = 0
 mesh = SubResource("CapsuleMesh_ucva2")
 
-[node name="Collider" type="CollisionShape3D" parent="."]
+[node name="StandingCollider" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_iof21")
+
+[node name="CrouchCollider" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("CapsuleShape3D_njsuj")
 
 [node name="Head" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
@@ -64,3 +124,8 @@ target_position = Vector3(0, -0.1, 0)
 [node name="RayCast_edge4" type="RayCast3D" parent="RaycastGroup"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.44112745, 0, 0)
 target_position = Vector3(0, -0.1, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_62upf")
+}
