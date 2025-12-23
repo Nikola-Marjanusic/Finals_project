@@ -1,6 +1,8 @@
-[gd_scene load_steps=10 format=3 uid="uid://bs72ogkvdd7d6"]
+[gd_scene load_steps=12 format=3 uid="uid://bs72ogkvdd7d6"]
 
-[ext_resource type="Script" uid="uid://0viwh103d8tp" path="res://Addons/proto_controller/proto_controller.gd" id="1_ucva2"]
+[ext_resource type="Script" uid="uid://0viwh103d8tp" path="res://Scripts/proto_controller.gd" id="1_ucva2"]
+[ext_resource type="PackedScene" uid="uid://fbt0pdf51jbq" path="res://Scenes/rope.tscn" id="2_62upf"]
+[ext_resource type="Script" uid="uid://dnslbjpwos058" path="res://Scripts/hook_controller.gd" id="2_mpk8l"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iof21"]
 albedo_color = Color(0.91806, 0.575202, 0.222449, 1)
@@ -16,22 +18,6 @@ height = 1.8
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_njsuj"]
 radius = 0.4
 height = 1.0
-
-[sub_resource type="Animation" id="Animation_njsuj"]
-resource_name = "StandingToCrouch"
-length = 0.2
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Head:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.2),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Vector3(0, 1.7, 0), Vector3(0, 0.9, 0)]
-}
 
 [sub_resource type="Animation" id="Animation_mpk8l"]
 length = 0.001
@@ -64,6 +50,22 @@ tracks/0/keys = {
 "values": [Vector3(0, 1.7, 0)]
 }
 
+[sub_resource type="Animation" id="Animation_njsuj"]
+resource_name = "StandingToCrouch"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Head:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, 1.7, 0), Vector3(0, 0.9, 0)]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_62upf"]
 _data = {
 &"RESET": SubResource("Animation_mpk8l"),
@@ -75,7 +77,6 @@ _data = {
 script = ExtResource("1_ucva2")
 max_air_jumps = 3
 jump_velocity = 6.5
-super_jump_mult = 1.5
 deceleration = 0.52
 acceleration = 0.025
 input_left = "move_left"
@@ -103,6 +104,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head"]
 
+[node name="Rope" parent="Head/Camera3D" instance=ExtResource("2_62upf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, -0.3, 0)
+
+[node name="HookCast" type="RayCast3D" parent="Head/Camera3D"]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+target_position = Vector3(50, 0, 0)
+
 [node name="RaycastGroup" type="Node3D" parent="."]
 
 [node name="RayCast_mid" type="RayCast3D" parent="RaycastGroup"]
@@ -129,3 +137,8 @@ target_position = Vector3(0, -0.1, 0)
 libraries = {
 &"": SubResource("AnimationLibrary_62upf")
 }
+
+[node name="HookController" type="Node" parent="." node_paths=PackedStringArray("ray", "rope")]
+script = ExtResource("2_mpk8l")
+ray = NodePath("../Head/Camera3D/HookCast")
+rope = NodePath("../Head/Camera3D/Rope")
