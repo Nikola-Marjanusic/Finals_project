@@ -25,15 +25,15 @@ var freeflying : bool = false
 ## Look around rotation speed.
 @export var look_speed : float = 0.002
 ## Normal speed.
-@export var run_speed : float = 9.0
+@export var run_speed : float = 3
 ## Speed of jump.
-@export var jump_velocity : float = 4.5
+@export var jump_velocity : float = 6.5
 ## How fast do we freefly?
 @export var freefly_speed : float = 25.0
 ## How fast do we stop
-@export_range(0.0, 1.0) var deceleration : float = 0.5
+@export var deceleration : float = 1.0
 ## How fast do we get to full speed
-@export_range(0.0, 1.0) var acceleration : float = 0.5
+@export var acceleration : float = 1.0
 
 @export_group("Input Actions")
 ## Name of Input Action to move Left.
@@ -51,10 +51,11 @@ var freeflying : bool = false
 
 @export_group("miscellaneous")
 ## Time before decelaration
-@export var deceleration_buffer : float = 0.1
+@export var deceleration_buffer : float = 0.05
 @export var jump_buffer : float = 0.1
 @export var jump_buffer_distance : float = 0.1
-var slope_angle
+var move_dir: Vector3
+var is_grappled := false
 var base_speed : float = run_speed
 var delayed_jump := false 
 var timers := {
@@ -167,25 +168,43 @@ func _physics_process(delta: float) -> void:
 
 	#Move player
 	if can_move:
-		var input_dir := Input.get_vector(input_left, input_right, input_forward, input_back)
-		var move_dir := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-		if move_dir:
-			# Accelerate
-			move_speed = lerp(move_speed, base_speed, 1.0 - pow(1.0 - acceleration, delta * 60.0))
-			velocity.x = move_dir.x * move_speed
-			velocity.z = move_dir.z * move_speed
-			timers["move"] = 0.0
-		elif timers["move"] > deceleration_buffer:
-			# Decelerate 
-			move_speed = lerp(move_speed, 0.0, 1.0 - pow(1.0 - deceleration, delta * 60.0))
-			velocity.x = move_toward(velocity.x, 0, 1.0 - pow(1.0 - deceleration, delta * 60.0)) 
-			velocity.z = move_toward(velocity.z, 0, 1.0 - pow(1.0 - deceleration, delta * 60.0))
+		if not is_grappled:
+			var input_dir := Input.get_vector(input_left, input_right, input_forward, input_back)
+
+			# Only update direction when input exists
+			if input_dir != Vector2.ZERO:
+				move_dir = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+
+			# Accelerate or decelerate
+			if move_dir != Vector3.ZERO:
+				if input_dir != Vector2.ZERO:
+					# ACCELERATE
+					if move_speed < run_speed:
+						move_speed = run_speed
+					move_speed += acceleration * delta
+					move_speed = min(move_speed, 10.0)
+					timers["move"] = 0.0
+				
+				elif timers["move"] > deceleration_buffer:
+					if is_on_floor():
+						# DECELERATE
+						move_speed *= pow(deceleration, delta)
+						if move_speed < 10.0:
+							move_speed = 0.0
+					else:
+						#no deceleration in the air
+						move_speed = move_speed
+				velocity.x = move_dir.x * move_speed
+				velocity.z = move_dir.z * move_speed
 	else:
 		velocity.x = 0
 		velocity.y = 0
 	# Use velocity to actually move
 	move_and_slide()
-
+	
+func get_speed(delta):
+	pass
+	
 ## Rotate us to look around.
 ## Base of controller rotates around y (left/right). Head rotates around x (up/down).
 ## Modifies look_rotation based on rot_input, then resets basis and rotates by look_rotation.
