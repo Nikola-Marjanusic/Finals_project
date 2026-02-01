@@ -55,6 +55,7 @@ func hook():
 func unHook():
 	hooked = false
 	player.is_grappled = false
+	player.move_dir = player.velocity.normalized()
 	
 func handle_grapple(delta: float):
 
@@ -84,15 +85,9 @@ func handle_grapple(delta: float):
 	else:
 		# If stationary, pick an arbitrary perpendicular vector
 		tangent = dir.cross(Vector3.UP).normalized()
-
-	# Get player input (example: left/right, forward/back in camera space)
-	var input_vec = Vector2(
-		Input.get_action_strength("move_right") - Input.get_action_strength("move_left"),
-		Input.get_action_strength("move_up") - Input.get_action_strength("move_down")
-	)
 	
-	# Combine input along tangent and vertical tangent
-	var tangent_input = (tangent * input_vec.x + tangent.cross(dir) * input_vec.y).normalized()
+	# Combine input along tangent and vertical tangents
+	var tangent_input = (tangent + tangent.cross(dir)).normalized()
 	player.velocity += tangent_input * input_strength * delta
 
 	# --- Step 4: Optional damping to avoid infinite swing ---

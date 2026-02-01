@@ -97,6 +97,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			disable_freefly()
 
 func _physics_process(delta: float) -> void:
+	var input_dir : Vector2
 	#Debug message every second
 	if timers["debug_timer"] >= 1.0:
 		print("speed: " , move_speed)
@@ -108,7 +109,7 @@ func _physics_process(delta: float) -> void:
 
 	# If freeflying, handle freefly and nothing else
 	if can_freefly and freeflying:
-		var input_dir := Input.get_vector(input_left, input_right, input_forward, input_back)
+		input_dir = Input.get_vector(input_left, input_right, input_forward, input_back)
 		var motion := (head.global_basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 		motion *= freefly_speed * delta
 		move_and_collide(motion)
@@ -159,6 +160,7 @@ func _physics_process(delta: float) -> void:
 						break
 					#use an air jump
 				if can_air_jump and air_jump_counter > 0 and delayed_jump == false:
+					input_dir = Input.get_vector(input_left, input_right, input_forward, input_back)
 					velocity.y = jump_velocity
 					timers["jump"] = 0.0
 					air_jump_counter = air_jump_counter-1
@@ -168,8 +170,12 @@ func _physics_process(delta: float) -> void:
 
 	#Move player
 	if can_move:
-		if not is_grappled:
-			var input_dir := Input.get_vector(input_left, input_right, input_forward, input_back)
+		if is_grappled:
+			#Hook controler handels grappl movement
+			pass
+		else:
+			if is_on_floor():
+				input_dir = Input.get_vector(input_left, input_right, input_forward, input_back)
 
 			# Only update direction when input exists
 			if input_dir != Vector2.ZERO:
@@ -179,10 +185,7 @@ func _physics_process(delta: float) -> void:
 			if move_dir != Vector3.ZERO:
 				if input_dir != Vector2.ZERO:
 					# ACCELERATE
-					if move_speed < run_speed:
-						move_speed = run_speed
-					move_speed += acceleration * delta
-					move_speed = min(move_speed, 10.0)
+					move_speed = get_speed(delta)
 					timers["move"] = 0.0
 				
 				elif timers["move"] > deceleration_buffer:
@@ -203,7 +206,30 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	
 func get_speed(delta):
-	pass
+	if move_speed < run_speed:
+		move_speed = run_speed
+	move_speed += acceleration * delta
+	move_speed = min(move_speed, 10.0)
+	return move_speed
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 ## Rotate us to look around.
 ## Base of controller rotates around y (left/right). Head rotates around x (up/down).
