@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://b6btj7d387ai5"]
+[gd_scene load_steps=6 format=3 uid="uid://b6btj7d387ai5"]
 
 [ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://Addons/proto_controller/proto_controller.tscn" id="1_wpsn8"]
+[ext_resource type="Script" uid="uid://bldc38xgktksg" path="res://Scripts/test_game.gd" id="1_x67xg"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_yxqvi"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -16,6 +17,7 @@ tonemap_mode = 2
 glow_enabled = true
 
 [node name="TestGame" type="Node3D"]
+script = ExtResource("1_x67xg")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_x67xg")

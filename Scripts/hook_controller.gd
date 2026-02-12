@@ -6,6 +6,7 @@ extends Node
 @export var damping := 0.999  # slow down swing naturally
 
 @onready var player: CharacterBody3D = get_parent()
+@onready var moveScript: Node = get_node("../MovementController")
 var target_pos: Vector3
 var max_dist: float
 var hooked: float = false
@@ -54,8 +55,8 @@ func hook():
 	
 func unHook():
 	hooked = false
-	player.is_grappled = false
-	player.move_dir = player.velocity.normalized()
+	moveScript.is_grappled = false
+	moveScript.move_dir = player.velocity.normalized()
 	
 func handle_grapple(delta: float):
 

@@ -24,16 +24,11 @@ var freeflying : bool = false
 @export_group("Speeds")
 ## Look around rotation speed.
 @export var look_speed : float = 0.002
-## Normal speed.
-@export var run_speed : float = 3
 ## Speed of jump.
 @export var jump_velocity : float = 6.5
 ## How fast do we freefly?
 @export var freefly_speed : float = 25.0
-## How fast do we stop
-@export var deceleration : float = 1.0
-## How fast do we get to full speed
-@export var acceleration : float = 1.0
+
 
 @export_group("Input Actions")
 ## Name of Input Action to move Left.
@@ -50,13 +45,11 @@ var freeflying : bool = false
 @export var input_freefly : String = "freefly"
 
 @export_group("miscellaneous")
-## Time before decelaration
-@export var deceleration_buffer : float = 0.05
 @export var jump_buffer : float = 0.1
 @export var jump_buffer_distance : float = 0.1
+
+@onready var moveScript: Node = $MovementController
 var move_dir: Vector3
-var is_grappled := false
-var base_speed : float = run_speed
 var delayed_jump := false 
 var timers := {
 	"move": 0.0,
@@ -100,7 +93,7 @@ func _physics_process(delta: float) -> void:
 	var input_dir : Vector2
 	#Debug message every second
 	if timers["debug_timer"] >= 1.0:
-		print("speed: " , move_speed)
+		#print("speed: " , move_speed)
 		timers["debug_timer"] = 0.0
 
 	# time sinc used for grace periods and cooldowns
@@ -165,52 +158,16 @@ func _physics_process(delta: float) -> void:
 					timers["jump"] = 0.0
 					air_jump_counter = air_jump_counter-1
 			
-	#speed calculation
-	base_speed = run_speed
 
 	#Move player
 	if can_move:
-		if is_grappled:
-			#Hook controler handels grappl movement
-			pass
-		else:
-			if is_on_floor():
-				input_dir = Input.get_vector(input_left, input_right, input_forward, input_back)
-
-			# Only update direction when input exists
-			if input_dir != Vector2.ZERO:
-				move_dir = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-
-			# Accelerate or decelerate
-			if move_dir != Vector3.ZERO:
-				if input_dir != Vector2.ZERO:
-					# ACCELERATE
-					move_speed = get_speed(delta)
-					timers["move"] = 0.0
-				
-				elif timers["move"] > deceleration_buffer:
-					if is_on_floor():
-						# DECELERATE
-						move_speed *= pow(deceleration, delta)
-						if move_speed < 10.0:
-							move_speed = 0.0
-					else:
-						#no deceleration in the air
-						move_speed = move_speed
-				velocity.x = move_dir.x * move_speed
-				velocity.z = move_dir.z * move_speed
+		if is_on_floor():
+			input_dir = Input.get_vector(input_left, input_right, input_forward, input_back)
+		moveScript.Move_func(delta,input_dir)
 	else:
 		velocity.x = 0
 		velocity.y = 0
-	# Use velocity to actually move
 	move_and_slide()
-	
-func get_speed(delta):
-	if move_speed < run_speed:
-		move_speed = run_speed
-	move_speed += acceleration * delta
-	move_speed = min(move_speed, 10.0)
-	return move_speed
 	
 	
 	

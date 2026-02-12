@@ -87,6 +87,9 @@ input_jump = "jump"
 script = ExtResource("2_mpk8l")
 ray = NodePath("../Head/Camera3D/HookCast")
 rope = NodePath("../Head/Camera3D/Rope")
+input_strength = null
+tether_lerp = null
+damping = null
 
 [node name="MovementController" type="Node" parent="."]
 script = ExtResource("3_64ncp")
