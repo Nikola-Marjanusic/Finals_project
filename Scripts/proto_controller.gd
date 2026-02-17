@@ -17,6 +17,16 @@ var move_speed : float = 0.0 #m/s
 ## How many air jumps?
 @export var max_air_jumps : int = 1
 var air_jump_counter = max_air_jumps
+
+## Can we press to Crouch?
+@export var can_crouch : bool = true
+var isCrouching: bool = false
+## Can the player slide?
+@export var can_slide : bool = true
+var isSliding: bool = false
+## How fast to go to slide
+@export var slide_trigger : float = 10.0 #m/s
+
 ## Can we press to enter freefly mode (noclip)?
 @export var can_freefly : bool = false
 var freeflying : bool = false
@@ -49,6 +59,7 @@ var freeflying : bool = false
 @export var jump_buffer_distance : float = 0.1
 
 @onready var moveScript: Node = $MovementController
+var state := "standing"
 var move_dir: Vector3
 var delayed_jump := false 
 var timers := {
@@ -130,6 +141,7 @@ func _physics_process(delta: float) -> void:
 		if delayed_jump:
 			velocity.y = jump_velocity
 			timers["jump"] = 0.0
+			uncrouchToJump()
 			delayed_jump = false
 		# Disable landing detection rays (no need when grounded)
 		for ray in rays:
@@ -143,6 +155,7 @@ func _physics_process(delta: float) -> void:
 				#handl normal jumps
 				velocity.y = jump_velocity
 				print("jump")
+				uncrouchToJump()
 				timers["jump"] = 0.0
 				
 			elif timers["jump"] >= jump_buffer:
@@ -156,9 +169,22 @@ func _physics_process(delta: float) -> void:
 					input_dir = Input.get_vector(input_left, input_right, input_forward, input_back)
 					velocity.y = jump_velocity
 					timers["jump"] = 0.0
+					uncrouchToJump()
 					air_jump_counter = air_jump_counter-1
 			
-
+	if can_crouch:
+			if Input.is_action_just_pressed("crouch"):
+				#stand up
+				if isCrouching == true or isSliding == true:
+					movementStateChange("uncrouch")
+				#slide or crouch
+				else:
+					movementStateChange("crouch")
+			#state change dipending on speed
+			if isCrouching == true and Vector2(velocity.x, velocity.z).length() >= slide_trigger:
+				movementStateChange("crouchToSlide")
+			elif isSliding and Vector2(velocity.x, velocity.z).length() <= slide_trigger:
+				movementStateChange("slideToCrouch")
 	#Move player
 	if can_move:
 		if is_on_floor():
@@ -186,7 +212,54 @@ func _physics_process(delta: float) -> void:
 	
 	
 	
-	
+func uncrouchToJump():
+	if isCrouching==true or isSliding == true:
+		movementStateChange("uncrouch")
+	else:
+		pass
+
+func movementStateChange(changeType):
+	match changeType:
+		"uncrouch":
+			$AnimationPlayer.play_backwards("StandingToCrouch")
+			isCrouching = false
+			isSliding = false
+			changeCollisionShapeTo("standing")
+			state = "standing"
+		"slide":
+			$AnimationPlayer.play("StandingToCrouch")
+			isCrouching = false
+			isSliding = true
+			#crouching and sliding Collision Shapes are the same 
+			changeCollisionShapeTo("crouching")
+			state = "slide"
+		"crouch":
+			$AnimationPlayer.play("StandingToCrouch")
+			isCrouching = true
+			isSliding = false
+			changeCollisionShapeTo("crouching")
+			state = "crouch"
+		"crouchToSlide":
+			isCrouching = false
+			isSliding = true
+			state = "slide"
+		"slideToCrouch":
+			isCrouching = true
+			isSliding = false
+			state = "crouch"
+
+
+#Change collision shapes for standing, crouch, crawl
+func changeCollisionShapeTo(shape):
+	match shape:
+		"crouching":
+			#Disabled == false is enabled!
+			$CrouchCollider.disabled = false
+			$StandingCollider.disabled = true
+		"standing":
+			#Disabled == false is enabled!
+			$StandingCollider.disabled = false
+			$CrouchCollider.disabled = true
 	
 ## Rotate us to look around.
 ## Base of controller rotates around y (left/right). Head rotates around x (up/down).

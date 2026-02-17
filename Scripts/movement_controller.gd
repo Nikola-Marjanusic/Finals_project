@@ -10,7 +10,10 @@ extends Node
 @export var deceleration : float = 5.0
 ## How fast do we get to full speed
 @export var acceleration : float = 5.0
-
+## crouch speed.
+@export var crouch_speed : float = 4.5
+## slide speed.
+@export var slide_speed : float = 10.0
 ## Time before decelaration
 @export var deceleration_buffer : float = 0.05
 
@@ -47,6 +50,8 @@ func Move_func(delta,input_dir):
 		player.velocity.x = move_dir.x * move_speed
 		player.velocity.z = move_dir.z * move_speed
 		print("move speed: " , move_speed)
+		
+		
 		if is_grappled and player.is_on_floor():
 			pass
 		elif is_grappled and !player.is_on_floor():
@@ -55,15 +60,29 @@ func Move_func(delta,input_dir):
 			pass
 		elif !is_grappled and !player.is_on_floor():
 			pass
-
+				
 func get_speed(delta):
-	if move_speed < run_speed:
-		move_speed = run_speed
+	var stateMod
+	if player.state == "standing":
+		stateMod = 1
+	elif player.state == "slide":
+		stateMod = 2
+	elif player.state == "crouch":
+		stateMod = 0.5
+	else:
+		print("unknown state of movement")
+		stateMod = 1
+		
+	if move_speed < run_speed * stateMod:
+		move_speed = run_speed * stateMod
+	move_speed += acceleration * delta
+	#is move_speed higher than the cap
+	if move_speed > run_cap*stateMod:
+		move_speed -= acceleration*2 * delta
+	
 	#did the player change deractions
 	if player.is_on_floor():
 		var move_dot = move_dir.dot(old_move_dir)
 		if move_dot < 0.95:
 			move_speed *= (move_dot/1.1)
-	move_speed += acceleration * delta
-	move_speed = min(move_speed, run_cap)
 	return move_speed
