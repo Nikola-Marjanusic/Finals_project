@@ -50,7 +50,7 @@ func hook():
 	if ray.get_collider():
 		target_pos = ray.get_collision_point()
 		max_dist = player.global_position.distance_to(target_pos)
-		player.is_grappled = true
+		moveScript.is_grappled = true
 		hooked = true
 	
 func unHook():
@@ -59,7 +59,6 @@ func unHook():
 	moveScript.move_dir = player.velocity.normalized()
 	
 func handle_grapple(delta: float):
-
 	var player_pos = player.global_position
 	var offset = player_pos - target_pos
 	var dist = offset.length()

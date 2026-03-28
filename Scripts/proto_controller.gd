@@ -181,9 +181,23 @@ func _physics_process(delta: float) -> void:
 				else:
 					movementStateChange("crouch")
 			#state change dipending on speed
-			if isCrouching == true and Vector2(velocity.x, velocity.z).length() >= slide_trigger:
+			var floor_normal = get_floor_normal()
+			var downhill_direction = Vector3.DOWN.slide(floor_normal).normalized()
+
+			var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
+			var horizontal_speed = Vector2(velocity.x, velocity.z).length()
+
+			var is_sliding_downhill = false
+			var is_moving_uphill = false
+			#check if am going up or down hill
+			if horizontal_velocity.length() > 0.1:
+				var move_direction = horizontal_velocity.normalized()
+				is_sliding_downhill = move_direction.dot(downhill_direction) > 0.3
+				is_moving_uphill = move_direction.dot(downhill_direction) < -0.3
+
+			if isCrouching and (horizontal_speed >= slide_trigger or is_sliding_downhill):
 				movementStateChange("crouchToSlide")
-			elif isSliding and Vector2(velocity.x, velocity.z).length() <= slide_trigger:
+			elif isSliding and (horizontal_speed <= slide_trigger or is_moving_uphill):
 				movementStateChange("slideToCrouch")
 	#Move player
 	if can_move:
