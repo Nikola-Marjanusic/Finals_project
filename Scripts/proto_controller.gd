@@ -101,6 +101,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			disable_freefly()
 
 func _physics_process(delta: float) -> void:
+	print("Velocity:" + str(velocity))
 	var input_dir : Vector2
 	#Debug message every second
 	if timers["debug_timer"] >= 1.0:
@@ -119,18 +120,7 @@ func _physics_process(delta: float) -> void:
 		move_and_collide(motion)
 		return
 
-	# Apply gravity to velocity
-	if has_gravity:
-		if not is_on_floor():
-			velocity += get_gravity() * delta
-		#Update ray length
-		if velocity.y <= 0.0:
-			var fall_speed_factor = 0.05
-			var ray_length = jump_buffer_distance + abs(velocity.y) * fall_speed_factor
-			#turne of rays for grace jumps
-			for ray in rays:
-				ray.enabled = true
-				ray.target_position = Vector3(0, -ray_length, 0)
+	
 
 	# reset air jumps when on floor
 	if is_on_floor():
@@ -211,7 +201,18 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.x = 0
 		velocity.y = 0
-	move_and_slide()
+# Apply gravity to velocity
+	if has_gravity:
+		if not is_on_floor():
+			velocity += get_gravity() * delta
+		#Update ray length
+		if velocity.y <= 0.0:
+			var fall_speed_factor = 0.05
+			var ray_length = jump_buffer_distance + abs(velocity.y) * fall_speed_factor
+			#turne of rays for grace jumps
+			for ray in rays:
+				ray.enabled = true
+				ray.target_position = Vector3(0, -ray_length, 0)
 	
 	
 	

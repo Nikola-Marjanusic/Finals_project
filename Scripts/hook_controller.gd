@@ -65,21 +65,19 @@ func handle_grapple(delta: float):
 	if dist == 0.0:
 		return  # avoid divide by zero
 
-	
 	var next_pos = player_pos + player.velocity * delta
 	var next_offset = next_pos - target_pos
 	var next_dist = next_offset.length()
-	var dir = offset / next_dist  # direction from target to player
 	if (max_dist >= next_dist):
 		pass
 	else:
 		# if outside of grapple lenght snap back to grapple
-		var final_pos = target_pos + dir * next_dist
-		var next_vector = (player_pos - final_pos)
+		var dir = (next_pos - target_pos).normalized()
+		var final_pos = target_pos + dir * max_dist
+		var next_dir = (player_pos - final_pos).normalized()
 		player.global_position = final_pos
-		player.velocity = next_vector
-		player.input_dir = Vector2(next_vector.x, next_vector.z).normalized()
-		
+		player.velocity = (player_pos - final_pos)#next_dir * player.velocity.length()
+		player.move_dir = player.velocity.normalized()
 func handle_Hook(delta: float):
 	pass
 

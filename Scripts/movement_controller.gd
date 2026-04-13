@@ -28,12 +28,18 @@ var base_speed : float = run_speed
 func Move_func(delta,input_dir):
 	if(player.is_on_floor() and not is_grappled):
 		ground_movement(delta,input_dir)
+		player.move_and_slide()
 	elif(player.is_on_floor() and is_grappled):
+		player.move_and_slide()
 		pass
 	elif (not player.is_on_floor() and is_grappled):
 		ground_movement(delta,input_dir)
+		player.move_and_slide()
 		grapple_movement(delta)
+		print(player.get_gravity())
+		player.velocity += player.get_gravity() * delta *10
 	elif (not player.is_on_floor() and not is_grappled):
+		player.move_and_slide()
 		pass
 
 func ground_movement(delta,input_dir):
@@ -63,7 +69,7 @@ func ground_movement(delta,input_dir):
 			
 			if move_dir.dot(wall_normal) < 0:
 				move_dir = move_dir.slide(wall_normal).normalized()
-		print("movespeed:"+str(move_speed))
+		#print("movespeed:"+str(move_speed))
 		player.velocity.x = move_dir.x * move_speed
 		player.velocity.z = move_dir.z * move_speed
 		

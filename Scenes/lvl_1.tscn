@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://dskpm7moo76nr"]
 
-[ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://Addons/proto_controller/proto_controller.tscn" id="1_qjdxc"]
+[ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://Addons/proto_controller/proto_controller.tscn" id="1_671ag"]
 [ext_resource type="PackedScene" uid="uid://uguva0xecor2" path="res://Models/testlevel.blend" id="2_671ag"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_671ag"]
@@ -21,8 +21,8 @@ glow_enabled = true
 
 [node name="Lvl_1" type="Node3D"]
 
-[node name="ProtoController" parent="." instance=ExtResource("1_qjdxc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4, 61.441902, 16.822021)
+[node name="ProtoController" parent="." instance=ExtResource("1_671ag")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 69.17192, 0)
 
 [node name="CSG_MAP" type="Node" parent="."]
 
