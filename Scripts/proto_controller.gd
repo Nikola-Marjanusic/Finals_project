@@ -182,7 +182,11 @@ func _physics_process(delta: float) -> void:
 					movementStateChange("crouch")
 			#state change dipending on speed
 			var floor_normal = get_floor_normal()
-			var downhill_direction = Vector3.DOWN.slide(floor_normal).normalized()
+			var downhill_direction
+			if is_on_floor():
+				downhill_direction = Vector3.DOWN.slide(floor_normal).normalized()
+			else:
+				downhill_direction = Vector3(0, 0, 0).normalized()
 
 			var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
 			var horizontal_speed = Vector2(velocity.x, velocity.z).length()

@@ -65,34 +65,21 @@ func handle_grapple(delta: float):
 	if dist == 0.0:
 		return  # avoid divide by zero
 
-	var dir = offset / dist  # direction from target to player
-
-	# --- Step 1: Remove outward radial velocity ---
-	var radial_speed = player.velocity.dot(dir)
-	if radial_speed > 0.0:
-		player.velocity -= dir * radial_speed
-
-	# --- Step 2: Soft tether constraint (prevent snapping) ---
-	if dist > max_dist:
-		var desired_pos = target_pos + dir * max_dist
-		player.global_position = player.global_position.lerp(desired_pos, tether_lerp * delta)
-
-	# --- Step 3: Apply player input along tangent plane ---
-	# Calculate swing plane tangent: cross product with velocity to get true 3D tangent
-	var tangent: Vector3
-	if player.velocity.length() > 0.01:
-		tangent = player.velocity.cross(dir).normalized()  # tangential around the rope
-	else:
-		# If stationary, pick an arbitrary perpendicular vector
-		tangent = dir.cross(Vector3.UP).normalized()
 	
-	# Combine input along tangent and vertical tangents
-	var tangent_input = (tangent + tangent.cross(dir)).normalized()
-	player.velocity += tangent_input * input_strength * delta
-
-	# --- Step 4: Optional damping to avoid infinite swing ---
-	player.velocity *= damping
-
+	var next_pos = player_pos + player.velocity * delta
+	var next_offset = next_pos - target_pos
+	var next_dist = next_offset.length()
+	var dir = offset / next_dist  # direction from target to player
+	if (max_dist >= next_dist):
+		pass
+	else:
+		# if outside of grapple lenght snap back to grapple
+		var final_pos = target_pos + dir * next_dist
+		var next_vector = (player_pos - final_pos)
+		player.global_position = final_pos
+		player.velocity = next_vector
+		player.input_dir = Vector2(next_vector.x, next_vector.z).normalized()
+		
 func handle_Hook(delta: float):
 	pass
 
